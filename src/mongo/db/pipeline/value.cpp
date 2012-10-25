@@ -643,16 +643,21 @@ namespace mongo {
 
         return static_cast<time_t>(seconds);
     }
-    tm Value::coerceToTm() const {
+
+    tm Value::coerceToTm( const bool local ) const {
         // See implementation in Date_t.
         // Can't reuse that here because it doesn't support times before 1970
         time_t dtime = coerceToTimeT();
         tm out;
 
 #if defined(_WIN32) // Both the argument order and the return values differ
-        bool itWorked = gmtime_s(&out, &dtime) == 0;
+        bool itWorked = (local
+              ? localtime_s(&out, &dtime)
+              : gmtime_s(&out, &dtime) ) == 0 ;
 #else
-        bool itWorked = gmtime_r(&dtime, &out) != NULL;
+        bool itWorked = (local
+              ? localtime_r(&dtime, &out)
+              : gmtime_r(&dtime, &out) ) != NULL;
 #endif
 
         if (!itWorked) {

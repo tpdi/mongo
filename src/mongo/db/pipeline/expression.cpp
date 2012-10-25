@@ -196,32 +196,33 @@ namespace mongo {
         {"$cmp", ExpressionCompare::createCmp, OpDesc::FIXED_COUNT, 2},
         {"$cond", ExpressionCond::create, OpDesc::FIXED_COUNT, 3},
         // $const handled specially in parseExpression
-        {"$dayOfMonth", ExpressionDayOfMonth::create, OpDesc::FIXED_COUNT, 1},
-        {"$dayOfWeek", ExpressionDayOfWeek::create, OpDesc::FIXED_COUNT, 1},
-        {"$dayOfYear", ExpressionDayOfYear::create, OpDesc::FIXED_COUNT, 1},
+        {"$dayOfMonth", ExpressionDayOfMonth::create, 0},
+        // was: OpDesc::FIXED_COUNT, 1}, for all date funcs
+        {"$dayOfWeek", ExpressionDayOfWeek::create, 0},
+        {"$dayOfYear", ExpressionDayOfYear::create, 0},
         {"$divide", ExpressionDivide::create, OpDesc::FIXED_COUNT, 2},
         {"$eq", ExpressionCompare::createEq, OpDesc::FIXED_COUNT, 2},
         {"$gt", ExpressionCompare::createGt, OpDesc::FIXED_COUNT, 2},
         {"$gte", ExpressionCompare::createGte, OpDesc::FIXED_COUNT, 2},
-        {"$hour", ExpressionHour::create, OpDesc::FIXED_COUNT, 1},
+        {"$hour", ExpressionHour::create, 0},
         {"$ifNull", ExpressionIfNull::create, OpDesc::FIXED_COUNT, 2},
         {"$lt", ExpressionCompare::createLt, OpDesc::FIXED_COUNT, 2},
         {"$lte", ExpressionCompare::createLte, OpDesc::FIXED_COUNT, 2},
-        {"$minute", ExpressionMinute::create, OpDesc::FIXED_COUNT, 1},
+        {"$minute", ExpressionMinute::create, 0},
         {"$mod", ExpressionMod::create, OpDesc::FIXED_COUNT, 2},
-        {"$month", ExpressionMonth::create, OpDesc::FIXED_COUNT, 1},
+        {"$month", ExpressionMonth::create, 0},
         {"$multiply", ExpressionMultiply::create, 0},
         {"$ne", ExpressionCompare::createNe, OpDesc::FIXED_COUNT, 2},
         {"$not", ExpressionNot::create, OpDesc::FIXED_COUNT, 1},
         {"$or", ExpressionOr::create, 0},
-        {"$second", ExpressionSecond::create, OpDesc::FIXED_COUNT, 1},
+        {"$second", ExpressionSecond::create, 0},
         {"$strcasecmp", ExpressionStrcasecmp::create, OpDesc::FIXED_COUNT, 2},
         {"$substr", ExpressionSubstr::create, OpDesc::FIXED_COUNT, 3},
         {"$subtract", ExpressionSubtract::create, OpDesc::FIXED_COUNT, 2},
         {"$toLower", ExpressionToLower::create, OpDesc::FIXED_COUNT, 1},
         {"$toUpper", ExpressionToUpper::create, OpDesc::FIXED_COUNT, 1},
-        {"$week", ExpressionWeek::create, OpDesc::FIXED_COUNT, 1},
-        {"$year", ExpressionYear::create, OpDesc::FIXED_COUNT, 1},
+        {"$week", ExpressionWeek::create, 0},
+        {"$year", ExpressionYear::create, 0},
     };
 
     static const size_t NOp = sizeof(OpTable)/sizeof(OpTable[0]);
@@ -846,20 +847,10 @@ namespace mongo {
     }
 
     ExpressionDayOfMonth::ExpressionDayOfMonth():
-        ExpressionNary() {
+        ExpressionTm() {
     }
 
-    void ExpressionDayOfMonth::addOperand(const intrusive_ptr<Expression> &pExpression) {
-        checkArgLimit(1);
-
-        ExpressionNary::addOperand(pExpression);
-    }
-
-    intrusive_ptr<const Value> ExpressionDayOfMonth::evaluate(
-        const intrusive_ptr<Document> &pDocument) const {
-        checkArgCount(1);
-        intrusive_ptr<const Value> pDate(vpOperand[0]->evaluate(pDocument));
-        tm date = pDate->coerceToTm();
+    intrusive_ptr<const Value> ExpressionDayOfMonth::getValueFromTm(tm& date) const {
         return Value::createInt(date.tm_mday); 
     }
 
@@ -878,20 +869,12 @@ namespace mongo {
     }
 
     ExpressionDayOfWeek::ExpressionDayOfWeek():
-        ExpressionNary() {
+        ExpressionTm() {
     }
 
-    void ExpressionDayOfWeek::addOperand(const intrusive_ptr<Expression> &pExpression) {
-        checkArgLimit(1);
-        ExpressionNary::addOperand(pExpression);
-    }
-
-    intrusive_ptr<const Value> ExpressionDayOfWeek::evaluate(
-        const intrusive_ptr<Document> &pDocument) const {
-        checkArgCount(1);
-        intrusive_ptr<const Value> pDate(vpOperand[0]->evaluate(pDocument));
-        tm date = pDate->coerceToTm();
+    intrusive_ptr<const Value> ExpressionDayOfWeek::getValueFromTm(tm& date) const {
         return Value::createInt(date.tm_wday+1); // MySQL uses 1-7 tm uses 0-6
+        // tpd: not sure why MySQL is necessarily our model
     }
 
     const char *ExpressionDayOfWeek::getOpName() const {
@@ -909,20 +892,11 @@ namespace mongo {
     }
 
     ExpressionDayOfYear::ExpressionDayOfYear():
-        ExpressionNary() {
+        ExpressionTm() {
     }
 
-    void ExpressionDayOfYear::addOperand(const intrusive_ptr<Expression> &pExpression) {
-        checkArgLimit(1);
-        ExpressionNary::addOperand(pExpression);
-    }
-
-    intrusive_ptr<const Value> ExpressionDayOfYear::evaluate(
-        const intrusive_ptr<Document> &pDocument) const {
-        checkArgCount(1);
-        intrusive_ptr<const Value> pDate(vpOperand[0]->evaluate(pDocument));
-        tm date = pDate->coerceToTm();
-        return Value::createInt(date.tm_yday+1); // MySQL uses 1-366 tm uses 0-365
+    intrusive_ptr<const Value> ExpressionDayOfYear::getValueFromTm(tm& date) const {
+        return Value::createInt(date.tm_yday + 1); // MySQL uses 1-366 tm uses 0-365
     }
 
     const char *ExpressionDayOfYear::getOpName() const {
@@ -1730,20 +1704,10 @@ namespace mongo {
     }
 
     ExpressionMinute::ExpressionMinute():
-        ExpressionNary() {
+        ExpressionTm() {
     }
 
-    void ExpressionMinute::addOperand(
-        const intrusive_ptr<Expression> &pExpression) {
-        checkArgLimit(1);
-        ExpressionNary::addOperand(pExpression);
-    }
-
-    intrusive_ptr<const Value> ExpressionMinute::evaluate(
-        const intrusive_ptr<Document> &pDocument) const {
-        checkArgCount(1);
-        intrusive_ptr<const Value> pDate(vpOperand[0]->evaluate(pDocument));
-        tm date = pDate->coerceToTm();
+    intrusive_ptr<const Value> ExpressionMinute::getValueFromTm(tm& date) const {
         return Value::createInt(date.tm_min);
     }
 
@@ -1831,19 +1795,10 @@ namespace mongo {
     }
 
     ExpressionMonth::ExpressionMonth():
-        ExpressionNary() {
+        ExpressionTm() {
     }
 
-    void ExpressionMonth::addOperand(const intrusive_ptr<Expression> &pExpression) {
-        checkArgLimit(1);
-        ExpressionNary::addOperand(pExpression);
-    }
-
-    intrusive_ptr<const Value> ExpressionMonth::evaluate(
-        const intrusive_ptr<Document> &pDocument) const {
-        checkArgCount(1);
-        intrusive_ptr<const Value> pDate(vpOperand[0]->evaluate(pDocument));
-        tm date = pDate->coerceToTm();
+    intrusive_ptr<const Value> ExpressionMonth::getValueFromTm(tm& date) const {
         return Value::createInt(date.tm_mon + 1); // MySQL uses 1-12 tm uses 0-11
     }
 
@@ -1917,19 +1872,10 @@ namespace mongo {
     }
 
     ExpressionHour::ExpressionHour():
-        ExpressionNary() {
+        ExpressionTm() {
     }
 
-    void ExpressionHour::addOperand(const intrusive_ptr<Expression> &pExpression) {
-        checkArgLimit(1);
-        ExpressionNary::addOperand(pExpression);
-    }
-
-    intrusive_ptr<const Value> ExpressionHour::evaluate(
-        const intrusive_ptr<Document> &pDocument) const {
-        checkArgCount(1);
-        intrusive_ptr<const Value> pDate(vpOperand[0]->evaluate(pDocument));
-        tm date = pDate->coerceToTm();
+    intrusive_ptr<const Value> ExpressionHour::getValueFromTm(tm& date) const {
         return Value::createInt(date.tm_hour);
     }
 
@@ -2309,19 +2255,10 @@ namespace mongo {
     }
 
     ExpressionSecond::ExpressionSecond():
-        ExpressionNary() {
+        ExpressionTm() {
     }
 
-    void ExpressionSecond::addOperand(const intrusive_ptr<Expression> &pExpression) {
-        checkArgLimit(1);
-        ExpressionNary::addOperand(pExpression);
-    }
-
-    intrusive_ptr<const Value> ExpressionSecond::evaluate(
-        const intrusive_ptr<Document> &pDocument) const {
-        checkArgCount(1);
-        intrusive_ptr<const Value> pDate(vpOperand[0]->evaluate(pDocument));
-        tm date = pDate->coerceToTm();
+    intrusive_ptr<const Value> ExpressionSecond::getValueFromTm(tm& date) const {
         return Value::createInt(date.tm_sec);
     }
 
@@ -2479,6 +2416,41 @@ namespace mongo {
         return "$subtract";
     }
 
+    /* ------------------------- ExpressionTm ------------------------------- */
+
+    ExpressionTm::~ExpressionTm() {
+    }
+
+    ExpressionTm::ExpressionTm() : ExpressionNary() {
+    }
+
+    void ExpressionTm::addOperand(
+        const intrusive_ptr<Expression> &pExpression) {
+        checkArgLimit(2);
+        ExpressionNary::addOperand(pExpression);
+    }
+
+    intrusive_ptr<const Value> ExpressionTm::evaluate(
+        const intrusive_ptr<Document> &pDocument) const {
+        checkArgCountAtMost(2);
+        intrusive_ptr<const Value> pDate(vpOperand[0]->evaluate(pDocument));
+        bool local = false;
+        if( vpOperand.size() > 1) {
+            intrusive_ptr<const Value> pOpt(vpOperand[1]->evaluate(pDocument));
+            local = pOpt->coerceToBool();
+        }
+        tm date = pDate->coerceToTm( local );
+        return getValueFromTm(date);
+    }
+
+    void ExpressionTm::checkArgCountAtMost(unsigned maxArgs) const {
+        uassert(55997, str::stream() << getOpName() <<
+                ":  too many operands; " << maxArgs <<
+                " required, got " << vpOperand.size(),
+                vpOperand.size() <= maxArgs);
+    }
+
+
     /* ------------------------- ExpressionToLower ----------------------------- */
 
     ExpressionToLower::~ExpressionToLower() {
@@ -2554,20 +2526,11 @@ namespace mongo {
         return pExpression;
     }
 
-    ExpressionWeek::ExpressionWeek():
-        ExpressionNary() {
+    ExpressionWeek::ExpressionWeek() : ExpressionTm() {
     }
 
-    void ExpressionWeek::addOperand(const intrusive_ptr<Expression> &pExpression) {
-        checkArgLimit(1);
-        ExpressionNary::addOperand(pExpression);
-    }
 
-    intrusive_ptr<const Value> ExpressionWeek::evaluate(
-        const intrusive_ptr<Document> &pDocument) const {
-        checkArgCount(1);
-        intrusive_ptr<const Value> pDate(vpOperand[0]->evaluate(pDocument));
-        tm date = pDate->coerceToTm();
+    intrusive_ptr<const Value> ExpressionWeek::getValueFromTm(tm& date) const {
         int dayOfWeek = date.tm_wday;
         int dayOfYear = date.tm_yday;
         int prevSundayDayOfYear = dayOfYear - dayOfWeek; // may be negative
@@ -2601,21 +2564,10 @@ namespace mongo {
         return pExpression;
     }
 
-    ExpressionYear::ExpressionYear():
-        ExpressionNary() {
+    ExpressionYear::ExpressionYear(): ExpressionTm() {
     }
 
-    void ExpressionYear::addOperand(
-        const intrusive_ptr<Expression> &pExpression) {
-        checkArgLimit(1);
-        ExpressionNary::addOperand(pExpression);
-    }
-
-    intrusive_ptr<const Value> ExpressionYear::evaluate(
-        const intrusive_ptr<Document> &pDocument) const {
-        checkArgCount(1);
-        intrusive_ptr<const Value> pDate(vpOperand[0]->evaluate(pDocument));
-        tm date = pDate->coerceToTm();
+    intrusive_ptr<const Value> ExpressionYear::getValueFromTm(tm& date) const {
         return Value::createInt(date.tm_year + 1900); // tm_year is years since 1900
     }
 

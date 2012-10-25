@@ -240,7 +240,7 @@ namespace mongo {
         */
         long long coerceToDate() const;
         time_t coerceToTimeT() const;
-        tm coerceToTm() const; // broken-out time struct (see man gmtime)
+        tm coerceToTm( const bool = false ) const; // broken-out time struct (see man gmtime)
 
         OpTime coerceToTimestamp() const;
 

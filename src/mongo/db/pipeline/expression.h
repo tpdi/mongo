@@ -307,6 +307,28 @@ namespace mongo {
         void checkArgCount(unsigned reqArgs) const;
     };
 
+    /*
+     * ExpressionTime: base class for expressions that operate on struct tm
+     * to produce a Value wrapping a struct tm member.
+     *
+     */
+    class ExpressionTm :
+        public ExpressionNary {
+    public:
+        // virtuals from ExpressionNary
+        virtual ~ExpressionTm();
+        virtual intrusive_ptr<const Value> evaluate(
+            const intrusive_ptr<Document> &pDocument) const;
+        virtual void addOperand(const intrusive_ptr<Expression> &pExpression);
+
+    protected:
+        ExpressionTm();
+        void checkArgCountAtMost(unsigned maxArgs) const;
+
+        // Template Method Pattern: hand a struct tm& to derived classes to turn into a value.
+        // Could be private, but leave it open for subclassing.
+        virtual intrusive_ptr<const Value> getValueFromTm(tm& date) const = 0;
+    };
 
     class ExpressionAdd :
         public ExpressionNary {
@@ -470,53 +492,47 @@ namespace mongo {
 
 
     class ExpressionDayOfMonth :
-        public ExpressionNary {
+        public ExpressionTm {
     public:
         // virtuals from ExpressionNary
         virtual ~ExpressionDayOfMonth();
-        virtual intrusive_ptr<const Value> evaluate(
-            const intrusive_ptr<Document> &pDocument) const;
         virtual const char *getOpName() const;
-        virtual void addOperand(const intrusive_ptr<Expression> &pExpression);
 
         static intrusive_ptr<ExpressionNary> create();
 
-    private:
+    protected:
         ExpressionDayOfMonth();
+        virtual intrusive_ptr<const Value> getValueFromTm(tm& date) const;
     };
 
 
     class ExpressionDayOfWeek :
-        public ExpressionNary {
+        public ExpressionTm {
     public:
         // virtuals from ExpressionNary
         virtual ~ExpressionDayOfWeek();
-        virtual intrusive_ptr<const Value> evaluate(
-            const intrusive_ptr<Document> &pDocument) const;
         virtual const char *getOpName() const;
-        virtual void addOperand(const intrusive_ptr<Expression> &pExpression);
 
         static intrusive_ptr<ExpressionNary> create();
 
-    private:
+    protected:
         ExpressionDayOfWeek();
+        virtual intrusive_ptr<const Value> getValueFromTm(tm& date) const;
     };
 
 
     class ExpressionDayOfYear :
-        public ExpressionNary {
+        public ExpressionTm {
     public:
         // virtuals from ExpressionNary
         virtual ~ExpressionDayOfYear();
-        virtual intrusive_ptr<const Value> evaluate(
-            const intrusive_ptr<Document> &pDocument) const;
         virtual const char *getOpName() const;
-        virtual void addOperand(const intrusive_ptr<Expression> &pExpression);
 
         static intrusive_ptr<ExpressionNary> create();
 
-    private:
+    protected:
         ExpressionDayOfYear();
+        virtual intrusive_ptr<const Value> getValueFromTm(tm& date) const;
     };
 
 
@@ -701,19 +717,17 @@ namespace mongo {
 
 
     class ExpressionHour :
-        public ExpressionNary {
+        public ExpressionTm {
     public:
         // virtuals from ExpressionNary
         virtual ~ExpressionHour();
-        virtual intrusive_ptr<const Value> evaluate(
-            const intrusive_ptr<Document> &pDocument) const;
         virtual const char *getOpName() const;
-        virtual void addOperand(const intrusive_ptr<Expression> &pExpression);
 
         static intrusive_ptr<ExpressionNary> create();
 
-    private:
+    protected:
         ExpressionHour();
+        intrusive_ptr<const Value> getValueFromTm(tm& date) const;
     };
 
 
@@ -735,19 +749,17 @@ namespace mongo {
 
 
     class ExpressionMinute :
-        public ExpressionNary {
+        public ExpressionTm {
     public:
         // virtuals from ExpressionNary
         virtual ~ExpressionMinute();
-        virtual intrusive_ptr<const Value> evaluate(
-            const intrusive_ptr<Document> &pDocument) const;
         virtual const char *getOpName() const;
-        virtual void addOperand(const intrusive_ptr<Expression> &pExpression);
 
         static intrusive_ptr<ExpressionNary> create();
 
-    private:
+    protected:
         ExpressionMinute();
+        virtual intrusive_ptr<const Value> getValueFromTm(tm& date) const;
     };
 
 
@@ -793,19 +805,17 @@ namespace mongo {
 
 
     class ExpressionMonth :
-        public ExpressionNary {
+        public ExpressionTm {
     public:
         // virtuals from ExpressionNary
         virtual ~ExpressionMonth();
-        virtual intrusive_ptr<const Value> evaluate(
-            const intrusive_ptr<Document> &pDocument) const;
         virtual const char *getOpName() const;
-        virtual void addOperand(const intrusive_ptr<Expression> &pExpression);
 
         static intrusive_ptr<ExpressionNary> create();
 
-    private:
+    protected:
         ExpressionMonth();
+        virtual intrusive_ptr<const Value> getValueFromTm(tm& date) const;
     };
 
 
@@ -1016,19 +1026,17 @@ namespace mongo {
 
 
     class ExpressionSecond :
-        public ExpressionNary {
+        public ExpressionTm {
     public:
         // virtuals from ExpressionNary
         virtual ~ExpressionSecond();
-        virtual intrusive_ptr<const Value> evaluate(
-            const intrusive_ptr<Document> &pDocument) const;
         virtual const char *getOpName() const;
-        virtual void addOperand(const intrusive_ptr<Expression> &pExpression);
 
         static intrusive_ptr<ExpressionNary> create();
 
-    private:
+    protected:
         ExpressionSecond();
+        intrusive_ptr<const Value> getValueFromTm(tm& date) const;
     };
 
 
@@ -1118,37 +1126,36 @@ namespace mongo {
 
 
     class ExpressionWeek :
-        public ExpressionNary {
+        public ExpressionTm {
     public:
         // virtuals from ExpressionNary
         virtual ~ExpressionWeek();
-        virtual intrusive_ptr<const Value> evaluate(
-            const intrusive_ptr<Document> &pDocument) const;
         virtual const char *getOpName() const;
-        virtual void addOperand(const intrusive_ptr<Expression> &pExpression);
 
         static intrusive_ptr<ExpressionNary> create();
 
-    private:
+    protected:
         ExpressionWeek();
+        virtual intrusive_ptr<const Value> getValueFromTm(tm& date) const;
+
     };
 
 
     class ExpressionYear :
-        public ExpressionNary {
+        public ExpressionTm {
     public:
         // virtuals from ExpressionNary
         virtual ~ExpressionYear();
-        virtual intrusive_ptr<const Value> evaluate(
-            const intrusive_ptr<Document> &pDocument) const;
         virtual const char *getOpName() const;
-        virtual void addOperand(const intrusive_ptr<Expression> &pExpression);
 
         static intrusive_ptr<ExpressionNary> create();
 
-    private:
+    protected:
         ExpressionYear();
+        virtual intrusive_ptr<const Value> getValueFromTm(tm& date) const;
+
     };
+
 }
 
 
