@@ -134,7 +134,7 @@ var testDates = function() {
 		try {
 			collection.remove();
 			var insertedCount = fillData( collection );
-			print( tojson( makeProjection( jsDateFuncToAggExp, UTCArgValue )));
+			//print( tojson( makeProjection( jsDateFuncToAggExp, UTCArgValue )));
 			var r = collection.aggregate( makeProjection( jsDateFuncToAggExp, UTCArgValue ) );
 			//print ( tojson(r) ) ;
 			assert( r && r.result && r.result.length == insertedCount, r );
